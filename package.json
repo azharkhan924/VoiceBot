@@ -1,0 +1,27 @@
+{
+  "name": "ai-incoming-voice-bot",
+  "version": "1.0.0",
+  "description": "Free-stack AI voice bot for incoming calls - Hindi/Hinglish support (Gemini/Groq + Whisper + Piper TTS)",
+  "main": "backend/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "test:call": "node backend/testClient.js"
+  },
+  "keywords": ["voice-bot", "hindi", "whisper", "piper-tts", "gemini", "groq"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.17.0",
+    "dotenv": "^16.4.5",
+    "better-sqlite3": "^11.1.2",
+    "node-fetch": "^2.7.0",
+    "winston": "^3.13.0",
+    "chokidar": "^3.6.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

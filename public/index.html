@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Incoming Voice Bot — Telephony & Live Web Calling Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-background">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </div>
+      <div>
+        <h1>VoiceBot AI Gateway</h1>
+        <span class="subtitle">Hindi & Hinglish Real-time Telephony Bridge</span>
+      </div>
+    </div>
+
+    <div class="status-panel">
+      <div class="status-badge online" id="status-gateway">
+        <span class="pulse-dot"></span>
+        Gateway Active
+      </div>
+      <div class="provider-info" id="provider-info">
+        <span class="pill">STT: Whisper Fast</span>
+        <span class="pill">AI: Gemini 2.5</span>
+        <span class="pill">TTS: Edge Neural (Indian)</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-grid">
+    <!-- Left Column: Live WebRTC Softphone Dialer -->
+    <section class="card softphone-card">
+      <div class="card-header">
+        <div class="title-with-icon">
+          <span class="icon">🎙️</span>
+          <h2>Live Web Phone Dashboard</h2>
+        </div>
+        <span class="status-tag" id="call-status-tag">Ready to Call</span>
+      </div>
+
+      <div class="dialer-body">
+        <div class="input-group">
+          <label for="caller-id-input">Simulated Caller ID / Number</label>
+          <input type="text" id="caller-id-input" value="+91-9876543210" placeholder="Enter Caller ID or Name">
+        </div>
+
+        <div class="mode-selector">
+          <label class="mode-label">Calling Mode:</label>
+          <div class="toggle-group">
+            <button type="button" class="mode-btn active" id="btn-mode-vad" data-mode="vad">
+              ⚡ Auto VAD (Continuous Talk)
+            </button>
+            <button type="button" class="mode-btn" id="btn-mode-ptt" data-mode="ptt">
+              👆 Push-to-Talk Mode
+            </button>
+          </div>
+        </div>
+
+        <!-- Audio Visualizer -->
+        <div class="visualizer-container">
+          <canvas id="audio-visualizer" width="460" height="110"></canvas>
+          <div class="visualizer-label" id="visualizer-label">Mic Inactive</div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="dialer-actions">
+          <button id="btn-start-call" class="btn btn-call">
+            <span class="btn-icon">📞</span>
+            <span class="btn-text">Answer Live Call</span>
+          </button>
+          <button id="btn-end-call" class="btn btn-hangup hidden">
+            <span class="btn-icon">☎️</span>
+            <span class="btn-text">End Call</span>
+          </button>
+          <button id="btn-ptt-speak" class="btn btn-ptt hidden">
+            <span class="btn-icon">🎙️</span>
+            <span class="btn-text">Hold to Speak</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Transcript Panel -->
+      <div class="transcript-box">
+        <h3>Live Conversation Transcript</h3>
+        <div class="transcript-feed" id="live-transcript">
+          <div class="turn info-turn">
+            Click "Answer Live Call" above and speak into your microphone to test the AI pipeline in real time.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Integration Webhooks & Call Logs -->
+    <section class="right-col">
+      <!-- Integration Webhook Box -->
+      <div class="card webhook-card">
+        <div class="card-header">
+          <div class="title-with-icon">
+            <span class="icon">🔌</span>
+            <h2>Cloud Telephony Integration (PSTN)</h2>
+          </div>
+        </div>
+        <div class="webhook-content">
+          <p class="description">
+            Connect real PSTN phone numbers (Twilio, Exotel, Plivo) instantly using our built-in TwiML & Media Stream bridge.
+          </p>
+
+          <div class="webhook-box">
+            <label>Twilio Voice Webhook URL (POST/GET)</label>
+            <div class="copy-field">
+              <input type="text" id="webhook-url" readonly value="http://localhost:3000/twilio/voice">
+              <button class="btn-copy" id="btn-copy-webhook" title="Copy to clipboard">📋 Copy</button>
+            </div>
+            <span class="helper-text">💡 If using ngrok, replace <code>localhost:3000</code> with your ngrok HTTPS domain.</span>
+          </div>
+
+          <div class="integration-pills">
+            <div class="int-pill">
+              <strong>Twilio Media Streams:</strong> Native G.711 µ-law 8kHz bi-directional audio supported.
+            </div>
+            <div class="int-pill">
+              <strong>Asterisk / FreeSWITCH:</strong> Connect over WebSocket to <code>ws://localhost:3000/media-stream</code> (PCM16).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Call Logs Table -->
+      <div class="card logs-card">
+        <div class="card-header">
+          <div class="title-with-icon">
+            <span class="icon">📜</span>
+            <h2>Recent Call History</h2>
+          </div>
+          <button class="btn-refresh" id="btn-refresh-logs">🔄 Refresh</button>
+        </div>
+
+        <div class="table-container">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>Call ID</th>
+                <th>Caller ID</th>
+                <th>Started</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody">
+              <tr>
+                <td colspan="5" class="empty-state">Loading call history...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Transcript Modal -->
+  <div class="modal-overlay" id="modal-transcript">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Call Transcript</h3>
+        <button class="modal-close" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-transcript-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

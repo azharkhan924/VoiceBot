@@ -1,0 +1,10 @@
+node_modules/
+.env
+bin/
+database/*.db
+database/*.db-journal
+database/*.db-wal
+database/*.db-shm
+logs/*.log
+*.wav
+reply-*.wav
