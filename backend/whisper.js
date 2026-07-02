@@ -11,8 +11,83 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const fetch = require('node-fetch');
 const config = require('../config/config');
 const logger = require('./logger');
+
+let groqSttKeyIndex = 0;
+
+/**
+ * Transcribes audio online using Groq's free Whisper Large V3 API.
+ * High accuracy (1.5B parameters), <200ms speed, 0MB server CPU usage.
+ */
+async function transcribeWithGroq(wavPath) {
+  const apiKeys = config.ai.groq.apiKeys && config.ai.groq.apiKeys.length > 0
+    ? config.ai.groq.apiKeys
+    : (config.ai.groq.apiKey ? [config.ai.groq.apiKey] : []);
+
+  if (!apiKeys.length) {
+    throw new Error('GROQ_API_KEYS is not set for Groq Whisper STT');
+  }
+
+  const fileData = fs.readFileSync(wavPath);
+  const fileName = path.basename(wavPath);
+
+  let lastError = null;
+  const startIndex = groqSttKeyIndex;
+  groqSttKeyIndex = (groqSttKeyIndex + 1) % apiKeys.length;
+
+  for (let i = 0; i < apiKeys.length; i++) {
+    const currentIndex = (startIndex + i) % apiKeys.length;
+    const apiKey = apiKeys[currentIndex];
+
+    const boundary = `----VoiceBotSttBoundary${Date.now()}`;
+    const fields = [
+      { name: 'model', value: 'whisper-large-v3-turbo' },
+      { name: 'language', value: config.stt.language || 'hi' },
+      { name: 'response_format', value: 'json' },
+      { name: 'temperature', value: '0.0' },
+    ];
+
+    let header = '';
+    for (const field of fields) {
+      header += `--${boundary}\r\n`;
+      header += `Content-Disposition: form-data; name="${field.name}"\r\n\r\n`;
+      header += `${field.value}\r\n`;
+    }
+    header += `--${boundary}\r\n`;
+    header += `Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n`;
+    header += `Content-Type: audio/wav\r\n\r\n`;
+
+    const headerBuf = Buffer.from(header, 'utf-8');
+    const footerBuf = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf-8');
+    const bodyBuf = Buffer.concat([headerBuf, fileData, footerBuf]);
+
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        },
+        body: bodyBuf,
+        timeout: 15000,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Groq STT error ${res.status}: ${errText}`);
+      }
+
+      const data = await res.json();
+      return (data.text || '').trim();
+    } catch (err) {
+      lastError = err;
+      logger.warn(`Groq STT key ${currentIndex + 1}/${apiKeys.length} failed: ${err.message}`);
+    }
+  }
+  throw new Error(`All Groq STT keys failed. Last error: ${lastError?.message}`);
+}
 
 /**
  * Writes a raw PCM16 mono buffer to a temporary WAV file.
@@ -115,7 +190,9 @@ async function transcribeAudio(pcmBuffer) {
   const wavPath = pcmToWavFile(pcmBuffer);
   try {
     let text;
-    if (config.stt.engine === 'fasterwhisper') {
+    if (config.stt.engine === 'groq') {
+      text = await transcribeWithGroq(wavPath);
+    } else if (config.stt.engine === 'fasterwhisper') {
       text = await transcribeWithFasterWhisper(wavPath);
     } else {
       text = await transcribeWithWhisperCpp(wavPath);

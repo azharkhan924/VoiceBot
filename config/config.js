@@ -47,7 +47,7 @@ const config = {
   },
 
   stt: {
-    engine: (process.env.STT_ENGINE || 'whispercpp').toLowerCase(), // whispercpp | fasterwhisper
+    engine: (process.env.STT_ENGINE || 'groq').toLowerCase(), // groq | whispercpp | fasterwhisper
     language: process.env.STT_LANGUAGE || 'hi',
     whisperCpp: {
       bin: process.env.WHISPER_CPP_BIN || './bin/whisper.cpp/main',

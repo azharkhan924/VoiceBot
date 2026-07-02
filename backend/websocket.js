@@ -160,7 +160,7 @@ function attachWebSocketHandlers(wss) {
 
             // Server-side silence detection (VAD) for browser binary frames
             const energy = calculatePcmEnergy(message);
-            if (energy > 150) {
+            if (energy > 100) {
               callState.isSpeaking = true;
               if (callState.silenceTimer) {
                 clearTimeout(callState.silenceTimer);
@@ -168,7 +168,7 @@ function attachWebSocketHandlers(wss) {
               }
             } else if (callState.isSpeaking && callState.audioChunks.length > 3) {
               if (!callState.silenceTimer) {
-                callState.silenceTimer = setTimeout(() => processUtterance(ws, callState), 800);
+                callState.silenceTimer = setTimeout(() => processUtterance(ws, callState), 1100);
               }
             }
           }
@@ -206,16 +206,16 @@ function attachWebSocketHandlers(wss) {
 
               // Server-side silence detection (VAD) for live telephony streams
               const energy = calculatePcmEnergy(pcmChunk);
-              if (energy > 300) {
+              if (energy > 120) {
                 callState.isSpeaking = true;
                 if (callState.silenceTimer) {
                   clearTimeout(callState.silenceTimer);
                   callState.silenceTimer = null;
                 }
-              } else if (callState.isSpeaking && callState.audioChunks.length > 5) {
+              } else if (callState.isSpeaking && callState.audioChunks.length > 4) {
                 if (!callState.silenceTimer) {
-                  // After 900ms of continuous silence, process the speech
-                  callState.silenceTimer = setTimeout(() => processUtterance(ws, callState), 900);
+                  // After 1100ms of continuous silence, process the speech
+                  callState.silenceTimer = setTimeout(() => processUtterance(ws, callState), 1100);
                 }
               }
               break;
