@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  asterisk-sip-bridge:
+    build: .
+    container_name: voicebot-sip-bridge
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - BOT_WS_URL=wss://voicebot-omrc.onrender.com/media-stream

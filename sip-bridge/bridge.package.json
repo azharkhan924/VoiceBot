@@ -1,0 +1,9 @@
+{
+  "name": "asterisk-eagi-bridge",
+  "version": "1.0.0",
+  "description": "EAGI WebSocket bridge for Asterisk to AI Voice Bot",
+  "private": true,
+  "dependencies": {
+    "ws": "^8.17.0"
+  }
+}
