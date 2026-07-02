@@ -95,17 +95,24 @@ function synthesizeWithCoqui(text) {
 async function synthesizeSpeech(text) {
   try {
     let audio;
-    if (config.tts.engine === 'edgetts') {
+    if (config.tts.engine === 'edgetts' || config.tts.engine === 'auto') {
       try {
         audio = await synthesizeWithEdgeTTS(text, config.tts.edgeVoice || 'hi-IN-SwaraNeural');
       } catch (edgeErr) {
         logger.warn('Edge TTS failed, falling back to Piper offline TTS', { error: edgeErr.message });
         audio = await synthesizeWithPiper(text);
       }
-    } else if (config.tts.engine === 'coqui') {
-      audio = await synthesizeWithCoqui(text);
     } else {
-      audio = await synthesizeWithPiper(text);
+      try {
+        if (config.tts.engine === 'coqui') {
+          audio = await synthesizeWithCoqui(text);
+        } else {
+          audio = await synthesizeWithPiper(text);
+        }
+      } catch (localErr) {
+        logger.warn(`Local TTS (${config.tts.engine}) failed (${localErr.message}), falling back to online Edge TTS...`);
+        audio = await synthesizeWithEdgeTTS(text, config.tts.edgeVoice || 'hi-IN-SwaraNeural');
+      }
     }
     logger.info('TTS synthesis complete', { engine: config.tts.engine, chars: text.length });
     return audio;

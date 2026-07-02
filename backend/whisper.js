@@ -255,10 +255,21 @@ async function transcribeAudio(pcmBuffer) {
       }
     } else if (config.stt.engine === 'gemini') {
       text = await transcribeWithGemini(wavPath);
-    } else if (config.stt.engine === 'fasterwhisper') {
-      text = await transcribeWithFasterWhisper(wavPath);
     } else {
-      text = await transcribeWithWhisperCpp(wavPath);
+      try {
+        if (config.stt.engine === 'fasterwhisper') {
+          text = await transcribeWithFasterWhisper(wavPath);
+        } else {
+          text = await transcribeWithWhisperCpp(wavPath);
+        }
+      } catch (localErr) {
+        logger.warn(`Local STT (${config.stt.engine}) failed (${localErr.message}), falling back to Groq / Gemini cloud STT...`);
+        try {
+          text = await transcribeWithGroq(wavPath);
+        } catch (groqErr) {
+          text = await transcribeWithGemini(wavPath);
+        }
+      }
     }
     logger.info('Transcription complete', { engine: config.stt.engine, text });
     return text;
