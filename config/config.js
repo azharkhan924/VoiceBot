@@ -74,6 +74,12 @@ const config = {
     path: process.env.SQLITE_DB_PATH || path.join(__dirname, '..', 'database', 'voicebot.db'),
   },
 
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+    authToken: process.env.TWILIO_AUTH_TOKEN || '',
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER || '+17373383221',
+  },
+
   logging: {
     level: process.env.LOG_LEVEL || 'info',
     file: process.env.LOG_FILE || path.join(__dirname, '..', 'logs', 'calls.log'),

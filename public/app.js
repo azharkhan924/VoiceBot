@@ -373,6 +373,49 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => (btnCopyWebhook.textContent = '📋 Copy'), 2000);
   });
 
+  // ---- Outbound PSTN Dialer Logic ----
+  const btnOutboundDial = document.getElementById('btn-outbound-dial');
+  const outboundPhoneInput = document.getElementById('outbound-phone-input');
+  const outboundHelperText = document.getElementById('outbound-helper-text');
+
+  if (btnOutboundDial) {
+    btnOutboundDial.addEventListener('click', async () => {
+      const phone = outboundPhoneInput.value.trim();
+      if (!phone) {
+        alert('Please enter a phone number with country code (e.g., +919876543210 or +17373383221)');
+        return;
+      }
+      btnOutboundDial.disabled = true;
+      btnOutboundDial.innerHTML = '⏳ Dialing...';
+      outboundHelperText.textContent = `Connecting Twilio outbound call to ${phone}...`;
+      outboundHelperText.style.color = '#f59e0b';
+
+      try {
+        const res = await fetch('/api/twilio/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: phone }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          outboundHelperText.textContent = `✅ Call initiated! Twilio is ringing ${phone} (SID: ${data.callSid})`;
+          outboundHelperText.style.color = '#10b981';
+          setTimeout(fetchLogs, 3000);
+        } else {
+          outboundHelperText.textContent = `❌ Error: ${data.message || 'Call failed'}`;
+          outboundHelperText.style.color = '#ef4444';
+          alert(`Twilio Outbound Call Failed:\n${data.message}`);
+        }
+      } catch (err) {
+        outboundHelperText.textContent = `❌ Network Error: ${err.message}`;
+        outboundHelperText.style.color = '#ef4444';
+      } finally {
+        btnOutboundDial.disabled = false;
+        btnOutboundDial.innerHTML = '📞 Dial Number';
+      }
+    });
+  }
+
   // Initial fetch
   fetchLogs();
 });

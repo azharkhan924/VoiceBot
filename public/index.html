@@ -143,6 +143,32 @@
         </div>
       </div>
 
+      <!-- Outbound PSTN Phone Dialer -->
+      <div class="card outbound-card">
+        <div class="card-header">
+          <div class="title-with-icon">
+            <span class="icon">📱</span>
+            <h2>Outbound PSTN Phone Dialer</h2>
+          </div>
+          <span class="status-tag" id="outbound-status-tag" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">Twilio Dial Ready</span>
+        </div>
+        <div class="webhook-content">
+          <p class="description">
+            Call any real mobile or landline number directly from here. Twilio will ring the phone and connect your AI Voice Bot the second they answer!
+          </p>
+          <div class="webhook-box" style="margin-top: 14px;">
+            <label for="outbound-phone-input">Destination Phone Number (with Country Code)</label>
+            <div class="copy-field">
+              <input type="text" id="outbound-phone-input" placeholder="+919876543210 or +17373383221">
+              <button class="btn btn-call" id="btn-outbound-dial" style="padding: 10px 18px; font-size: 0.95rem; white-space: nowrap; border-radius: 8px; cursor: pointer;">
+                📞 Dial Number
+              </button>
+            </div>
+            <span class="helper-text" id="outbound-helper-text" style="display: block; margin-top: 8px;">💡 Requires <code>TWILIO_ACCOUNT_SID</code> and <code>TWILIO_AUTH_TOKEN</code> configured on Render.</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Call Logs Table -->
       <div class="card logs-card">
         <div class="card-header">
