@@ -3,10 +3,35 @@
 // 100% Free, no API keys required, ~150ms latency, natural Indian accents.
 
 const WebSocket = require('ws');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('./logger');
 
-const EDGE_URL = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+const TRUSTED_CLIENT_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+const EDGE_URL = `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=${TRUSTED_CLIENT_TOKEN}`;
+
+/**
+ * Generates dynamic Sec-MS-GEC authentication headers to satisfy recent Bing security checks.
+ */
+function getEdgeHeaders() {
+  const unixTime = Math.floor(Date.now() / 1000);
+  const ticks = unixTime + 11644473600;
+  const roundedTicks = ticks - (ticks % 300);
+  const ticks100ns = roundedTicks * 10000000;
+  const strToHash = `${ticks100ns}${TRUSTED_CLIENT_TOKEN}`;
+  const secMsGec = crypto.createHash('sha256').update(strToHash, 'ascii').digest('hex').toUpperCase();
+
+  return {
+    'Pragma': 'no-cache',
+    'Cache-Control': 'no-cache',
+    'Origin': 'chrome-extension://jdiccldimpdaibogdichlkgimccdeomabk',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
+    'Sec-MS-GEC': secMsGec,
+    'Sec-MS-GEC-Version': '1-131.0.2903.86'
+  };
+}
 
 /**
  * Synthesizes speech using Microsoft Edge online neural voices.
@@ -15,10 +40,7 @@ const EDGE_URL = 'wss://speech.platform.bing.com/consumer/speech/synthesize/read
 function synthesizeWithEdgeTTS(text, voiceName = 'hi-IN-SwaraNeural', rate = '+10%') {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(EDGE_URL, {
-      headers: {
-        'Origin': 'chrome-extension://jdiccldimpdaibogdichlkgimccdeomabk',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edge/120.0.0.0'
-      }
+      headers: getEdgeHeaders()
     });
 
     const audioBuffers = [];
