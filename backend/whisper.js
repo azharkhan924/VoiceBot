@@ -86,7 +86,63 @@ async function transcribeWithGroq(wavPath) {
       logger.warn(`Groq STT key ${currentIndex + 1}/${apiKeys.length} failed: ${err.message}`);
     }
   }
-  throw new Error(`All Groq STT keys failed. Last error: ${lastError?.message}`);
+}
+
+/**
+ * Transcribes audio online using Google Gemini Multimodal Audio API.
+ * Excellent fallback if Groq keys are not set or unavailable.
+ */
+async function transcribeWithGemini(wavPath) {
+  const apiKeys = config.ai.gemini.apiKeys && config.ai.gemini.apiKeys.length > 0
+    ? config.ai.gemini.apiKeys
+    : (config.ai.gemini.apiKey ? [config.ai.gemini.apiKey] : []);
+
+  if (!apiKeys.length) {
+    throw new Error('GEMINI_API_KEYS is not set for Gemini STT');
+  }
+
+  const fileData = fs.readFileSync(wavPath);
+  const base64Audio = fileData.toString('base64');
+
+  let lastError = null;
+  for (let i = 0; i < apiKeys.length; i++) {
+    const apiKey = apiKeys[i];
+    const model = config.ai.gemini.model || 'gemini-2.5-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const body = {
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: 'Transcribe the spoken audio verbatim. Only return the transcribed speech text without any markdown or commentary. If there is no speech or silence, return an empty string.' },
+          { inline_data: { mime_type: 'audio/wav', data: base64Audio } }
+        ]
+      }],
+      generationConfig: { temperature: 0.0 }
+    };
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        timeout: 15000,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gemini STT error ${res.status}: ${errText}`);
+      }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return text.trim();
+    } catch (err) {
+      lastError = err;
+      logger.warn(`Gemini STT key ${i + 1}/${apiKeys.length} failed: ${err.message}`);
+    }
+  }
+  throw new Error(`All Gemini STT keys failed. Last error: ${lastError?.message}`);
 }
 
 /**
@@ -190,8 +246,15 @@ async function transcribeAudio(pcmBuffer) {
   const wavPath = pcmToWavFile(pcmBuffer);
   try {
     let text;
-    if (config.stt.engine === 'groq') {
-      text = await transcribeWithGroq(wavPath);
+    if (config.stt.engine === 'groq' || config.stt.engine === 'auto') {
+      try {
+        text = await transcribeWithGroq(wavPath);
+      } catch (groqErr) {
+        logger.warn(`Groq STT failed (${groqErr.message}), falling back to Gemini STT...`);
+        text = await transcribeWithGemini(wavPath);
+      }
+    } else if (config.stt.engine === 'gemini') {
+      text = await transcribeWithGemini(wavPath);
     } else if (config.stt.engine === 'fasterwhisper') {
       text = await transcribeWithFasterWhisper(wavPath);
     } else {
@@ -200,7 +263,7 @@ async function transcribeAudio(pcmBuffer) {
     logger.info('Transcription complete', { engine: config.stt.engine, text });
     return text;
   } catch (err) {
-    logger.error('Transcription failed', { engine: config.stt.engine, error: err.message });
+    logger.error('Transcription failed across all STT engines', { error: err.message });
     throw err;
   } finally {
     fs.unlink(wavPath, () => {});
